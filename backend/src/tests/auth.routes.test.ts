@@ -12,7 +12,12 @@ describe("Authentication Routes", () => {
                 .send({
                     name: "John Doe",
                     email: "john@example.com",
-                    password: "Password@123"
+                    password: "Password@123",
+                    city: "Delhi",
+                    pinCode: "110001",
+                    state: "Delhi",
+                    houseNumber: "123",
+                    phone: "9876543210"
                 });
 
             expect(response.status).toBe(201);
@@ -30,7 +35,12 @@ describe("Authentication Routes", () => {
                 .send({
                     name: "John",
                     email: "john@example.com",
-                    password: "Password@123"
+                    password: "Password@123",
+                    city: "Delhi",
+                    pinCode: "110001",
+                    state: "Delhi",
+                    houseNumber: "123",
+                    phone: "9876543210"
                 });
 
             const response = await request(app)
@@ -38,7 +48,12 @@ describe("Authentication Routes", () => {
                 .send({
                     name: "Another",
                     email: "john@example.com",
-                    password: "Password@123"
+                    password: "Password@123",
+                    city: "Delhi",
+                    pinCode: "110001",
+                    state: "Delhi",
+                    houseNumber: "123",
+                    phone: "9876543210"
                 });
 
             expect(response.status).toBe(409);
@@ -141,6 +156,19 @@ describe("Authentication Routes", () => {
             expect(response.status).toBe(400);
         });
 
+        it("should reject missing address fields", async () => {
+
+            const response = await request(app)
+                .post("/api/auth/register")
+                .send({
+                    name: "John",
+                    email: "john@example.com",
+                    password: "Password@123"
+                });
+
+            expect(response.status).toBe(400);
+        });
+
     });
 
     describe("POST /api/auth/login", () => {
@@ -152,7 +180,12 @@ describe("Authentication Routes", () => {
                 .send({
                     name: "John",
                     email: "john@example.com",
-                    password: "Password@123"
+                    password: "Password@123",
+                    city: "Delhi",
+                    pinCode: "110001",
+                    state: "Delhi",
+                    houseNumber: "123",
+                    phone: "9876543210"
                 });
 
         });
