@@ -1,0 +1,6 @@
+{
+  "name": "CAR BYTE",
+  "description": "Car dealership platform to discover, bookmark, and manage vehicle inventory with analytics and user registration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
