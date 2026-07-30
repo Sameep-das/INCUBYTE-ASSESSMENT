@@ -51,3 +51,13 @@ export  class InvalidRequestError extends Error {
         this.statusCode = 400;
     }
 }
+
+export class AuthorisationError extends Error {
+    statusCode: number;
+    constructor(message: string = "Not authorised to access this resource") {
+        super(message);
+        this.name = "AuthorisationError";
+        this.message = message;
+        this.statusCode = 403;
+    }
+}

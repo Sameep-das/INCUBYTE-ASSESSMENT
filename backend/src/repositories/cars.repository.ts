@@ -115,3 +115,24 @@ export async function findCarsByFilters(filters: SearchCarsDTO) {
     .from(cars)
     .where(and(...conditions));
 }
+
+export async function purchase(carId: string) {
+    return db.transaction(async (tx) => {
+        const [updatedCar] = await tx
+            .update(cars)
+            .set({
+                quantity: sql`${cars.quantity} - 1`
+            })
+            .where(
+                sql`${cars.carId} = ${carId}
+                AND ${cars.quantity} > 0`
+            )
+            .returning();
+
+        if (!updatedCar) {
+            throw new ApplicationError("Car is out of stock");
+        }
+
+        return updatedCar;
+    });
+}

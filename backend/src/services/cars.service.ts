@@ -3,6 +3,9 @@ import { InvalidRequestError } from "@/errors/auth.errors.js";
 import * as carRepo from "@/repositories/cars.repository.js";
 import type { NewCar, Car, CarCategory, SearchCarsDTO } from "@/types/cars.type.js";
 import { CarAlreadyExistsError, CarNotFoundError } from "@/errors/cars.error.js";
+import * as reservationStore from "@/utils/reservation.store.js";
+import { isCarFrozen, freezeCar } from "@/utils/maintenance.store.js";
+
 export const fetchAllCars = async () => {
     const cars = await carRepo.findAllCars();
     if (!cars || cars.length === 0) {
@@ -60,6 +63,9 @@ export const updateCarPrice = async (carModel: string, updatedPrice: number) => 
 }
 
 export const getCarById = async (carId: string) => {
+    if (isCarFrozen(carId)) {
+        throw new ApplicationError("Car under inventorry maintainance");
+    }
     const car = await carRepo.findCarById(carId);
     if(!car) {
         throw new InvalidRequestError(`Car does not exist`);
@@ -98,4 +104,72 @@ export const getCarsByPriceRange = async (minPrice: number, maxPrice: number) =>
         throw new InvalidRequestError(`No cars found in the price range ${minPrice} - ${maxPrice}`);
     }
     return cars;
+}
+
+export async function purchaseCar(carId: string) {
+    if (isCarFrozen(carId)) {
+        throw new ApplicationError("Car under inventorry maintainance");
+    }
+    const car = await carRepo.findCarById(carId);
+    if (!car) {
+        throw new CarNotFoundError("Car not found");
+    }
+    const reserved = reservationStore.getReserved(carId);
+
+    if (reserved >= car.quantity) {
+        throw new ApplicationError(
+            "Another customer is currently purchasing the remaining stock. Please try again shortly."
+        );
+    }
+
+    reservationStore.reserve(carId);
+
+    try {
+        return await carRepo.purchase(carId);
+    } finally {
+        reservationStore.release(carId);
+    }
+}
+
+export const deleteCarRecord = async (carId: string) => {
+    if (isCarFrozen(carId)) {
+        throw new ApplicationError("Car under inventorry maintainance");
+    }
+    const result = await carRepo.deleteCar(carId);
+    if (!result) {
+        throw new ApplicationError("Failed to delete the car");
+    }
+    return result;
+}
+
+export const updateCarRecord = async (carId: string, data: Partial<NewCar>) => {
+    if (isCarFrozen(carId)) {
+        throw new ApplicationError("Car under inventorry maintainance");
+    }
+    const result = await carRepo.updateCarPartially(carId, data);
+    if (!result) {
+        throw new ApplicationError("Failed to update the car");
+    }
+    return result;
+}
+
+export const restockCar = async (carId: string, quantity: number) => {
+    if (quantity < 0) {
+        throw new InvalidRequestError("Quantity cannot be negative");
+    }
+    
+    const car = await carRepo.findCarById(carId);
+    if (!car) {
+        throw new InvalidRequestError(`Car does not exist`);
+    }
+
+    const result = await carRepo.updateCarQuantity(car.carModel, quantity);
+    if (!result) {
+        throw new ApplicationError("Failed to update the car quantity");
+    }
+    
+    // Initiate maintenance window
+    freezeCar(carId);
+    
+    return result;
 }

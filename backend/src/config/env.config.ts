@@ -10,7 +10,10 @@ const envSchema = z.object({
     FRONTEND_URL: z.url().min(1),
     JWT_SECRET_ACCESS_TOKEN: z.string().min(32),
     JWT_SECRET_REFRESH_TOKEN: z.string().min(32),
-    NODE_ENV: z.string()
+    NODE_ENV: z.string(),
+    ADMIN_NAME: z.string().min(1),
+    ADMIN_EMAIL: z.email(),
+    ADMIN_PASSWORD_HASH: z.string().min(1)
 });
 
 
