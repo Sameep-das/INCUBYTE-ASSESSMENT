@@ -7,3 +7,4 @@ export default class ApplicationError extends Error {
         this.statusCode = 500;
     }
 }
+

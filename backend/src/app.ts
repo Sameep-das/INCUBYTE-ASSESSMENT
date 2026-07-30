@@ -3,6 +3,7 @@ import cors from "cors";
 import env from "./config/env.config.js";
 import cookieParser from "cookie-parser";
 import authRouter from "./routes/auth.routes.js";
+import errorHandler from "./middlewares/error.middleware.js";
 
 const app = express();
 
@@ -17,4 +18,5 @@ app.use(cors({
 }));
 
 app.use("/api/auth", authRouter);
+app.use(errorHandler);
 export default app;
