@@ -97,21 +97,16 @@ npm start
 
 ## Project Test Report
 
-Add test report screenshots below.
 
-![Test Report Placeholder](./docs/images/test-report-placeholder.png)
+![COVERAGE-1](./project-design-architecture/Coverage_report1.png)
 
-![Coverage Report Placeholder](./docs/images/coverage-report-placeholder.png)
+![COVERAGE-2](./project-design-architecture/Coverage_report2.png)
 
-## Project Demo
+![TEST-1](./project-design-architecture/Test1.png)
 
-Add project demo screenshots below.
+![TEST-2](./project-design-architecture/Test2.png)
 
-![Home Page Demo Placeholder](./docs/images/home-demo-placeholder.png)
-
-![Cars Page Demo Placeholder](./docs/images/cars-demo-placeholder.png)
-
-![Admin Dashboard Demo Placeholder](./docs/images/admin-dashboard-demo-placeholder.png)
+![TEST-3](./project-design-architecture/Test3.png)
 
 ## API Documentation
 
