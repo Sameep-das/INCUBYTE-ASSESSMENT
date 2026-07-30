@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CAR_CATEGORIES } from './car';
 
 export const INDIAN_STATES = [
   'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
@@ -35,7 +36,7 @@ export type AdminLoginData = z.infer<typeof adminLoginSchema>;
 export const carFormSchema = z.object({
   model: z.string().min(1, 'Model name is required'),
   manufacturer: z.string().min(1, 'Manufacturer is required'),
-  category: z.enum(['Sedan', 'SUV', 'Hatchback', 'Electric', 'Sports', 'Luxury']),
+  category: z.enum(CAR_CATEGORIES),
   quantity: z.number().min(0, 'Quantity must be at least 0'),
   price: z.number().min(100, 'Price must be realistic'),
   year: z.number().min(1900).max(new Date().getFullYear() + 1),

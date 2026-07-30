@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { adminLoginSchema, AdminLoginData } from '../types/auth';
 import { adminLoginApi } from '../services/api';
+import { showErrorToast } from '../services/errorToast';
 
 interface AdminLoginPageProps {
   onSuccess: () => void;
@@ -27,11 +28,20 @@ export const AdminLoginPage: React.FC<AdminLoginPageProps> = ({ onSuccess, onBac
 
   const onSubmit = async (data: AdminLoginData) => {
     setAuthError(null);
-    const isValid = await adminLoginApi(data);
-    if (isValid) {
-      onSuccess();
-    } else {
-      setAuthError('Invalid administrator credentials. Please check your name, email, and password.');
+    try {
+      const isValid = await adminLoginApi(data);
+      if (isValid) {
+        onSuccess();
+        return;
+      }
+
+      const message = 'Invalid administrator credentials. Please check your name, email, and password.';
+      setAuthError(message);
+      showErrorToast(message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to authenticate administrator';
+      setAuthError(message);
+      showErrorToast(message);
     }
   };
 

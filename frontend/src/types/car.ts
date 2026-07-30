@@ -1,4 +1,6 @@
-export type CarCategory = 'Sedan' | 'SUV' | 'Hatchback' | 'Electric' | 'Sports' | 'Luxury';
+export const CAR_CATEGORIES = ['Sedan', 'SUV', 'Hatchback', 'Convertible', 'Coupe', 'Wagon', 'Van', 'Jeep', 'Muv'] as const;
+
+export type CarCategory = typeof CAR_CATEGORIES[number];
 
 export interface Car {
   id: string;

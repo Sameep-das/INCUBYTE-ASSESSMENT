@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { signupSchema, SignupFormData, INDIAN_STATES } from '../../types/auth';
 import { registerUser } from '../../services/api';
+import { showErrorToast } from '../../services/errorToast';
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -22,8 +23,12 @@ export const SignupModal: React.FC<SignupModalProps> = ({ isOpen, onClose, onSuc
   if (!isOpen) return null;
 
   const onSubmit = async (data: SignupFormData) => {
-    await registerUser(data);
-    onSuccess();
+    try {
+      await registerUser(data);
+      onSuccess();
+    } catch (error) {
+      showErrorToast(error instanceof Error ? error.message : 'Failed to complete signup');
+    }
   };
 
   return (

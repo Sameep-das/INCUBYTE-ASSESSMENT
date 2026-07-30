@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Car } from './types/car';
-import { fetchCars } from './services/api';
+import { fetchAdminDashboardStats, fetchCars } from './services/api';
 import { useBookmarks } from './hooks/useBookmarks';
 import { HomePage } from './pages/HomePage';
 import { CarsPage } from './pages/CarsPage';
 import { BookmarksPage } from './pages/BookmarksPage';
 import { AdminLoginPage } from './pages/AdminLoginPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
+import { ErrorToastHost } from './components/common/ErrorToastHost';
+import { showErrorToast } from './services/errorToast';
 
 export const App: React.FC = () => {
   const [cars, setCars] = useState<Car[]>([]);
@@ -14,8 +16,23 @@ export const App: React.FC = () => {
   const { bookmarkedCars, toggleBookmark, isBookmarked } = useBookmarks();
 
   const loadCarsData = async () => {
-    const data = await fetchCars();
-    setCars(data);
+    try {
+      const data = await fetchCars();
+      setCars(data);
+    } catch (error) {
+      showErrorToast(error instanceof Error ? error.message : 'Failed to load cars');
+      setCars([]);
+    }
+  };
+
+  const refreshAdminDashboard = async () => {
+    try {
+      const [data] = await Promise.all([fetchCars(), fetchAdminDashboardStats()]);
+      setCars(data);
+    } catch (error) {
+      showErrorToast(error instanceof Error ? error.message : 'Failed to load admin dashboard');
+      setCars([]);
+    }
   };
 
   useEffect(() => {
@@ -42,50 +59,65 @@ export const App: React.FC = () => {
 
   if (isAdminPath) {
     return (
-      <AdminLoginPage
-        onSuccess={() => navigateTo('/admin/dashboard')}
-        onBackToHome={() => navigateTo('/')}
-      />
+      <>
+        <ErrorToastHost />
+        <AdminLoginPage
+          onSuccess={() => navigateTo('/admin/dashboard')}
+          onBackToHome={() => navigateTo('/')}
+        />
+      </>
     );
   }
 
   if (currentPath === '/admin/dashboard') {
     return (
-      <AdminDashboardPage
-        cars={cars}
-        onRefresh={loadCarsData}
-        onLogout={() => navigateTo('/')}
-      />
+      <>
+        <ErrorToastHost />
+        <AdminDashboardPage
+          cars={cars}
+          onRefresh={refreshAdminDashboard}
+          onLogout={() => navigateTo('/')}
+        />
+      </>
     );
   }
 
   if (currentPath === '/cars') {
     return (
-      <CarsPage
-        cars={cars}
-        isBookmarked={isBookmarked}
-        onToggleBookmark={toggleBookmark}
-        bookmarkCount={bookmarkedCars.length}
-        onNavigate={(tab) => navigateTo(tab === 'home' ? '/' : tab.startsWith('/') ? tab : `/${tab}`)}
-      />
+      <>
+        <ErrorToastHost />
+        <CarsPage
+          cars={cars}
+          isBookmarked={isBookmarked}
+          onToggleBookmark={toggleBookmark}
+          bookmarkCount={bookmarkedCars.length}
+          onNavigate={(tab) => navigateTo(tab === 'home' ? '/' : tab.startsWith('/') ? tab : `/${tab}`)}
+        />
+      </>
     );
   }
 
   if (currentPath === '/bookmarks') {
     return (
-      <BookmarksPage
-        bookmarkedCars={bookmarkedCars}
-        isBookmarked={isBookmarked}
-        onToggleBookmark={toggleBookmark}
-        onNavigate={(tab) => navigateTo(tab === 'home' ? '/' : tab.startsWith('/') ? tab : `/${tab}`)}
-      />
+      <>
+        <ErrorToastHost />
+        <BookmarksPage
+          bookmarkedCars={bookmarkedCars}
+          isBookmarked={isBookmarked}
+          onToggleBookmark={toggleBookmark}
+          onNavigate={(tab) => navigateTo(tab === 'home' ? '/' : tab.startsWith('/') ? tab : `/${tab}`)}
+        />
+      </>
     );
   }
 
   return (
-    <HomePage
-      onViewCars={() => navigateTo('/cars')}
-    />
+    <>
+      <ErrorToastHost />
+      <HomePage
+        onViewCars={() => navigateTo('/cars')}
+      />
+    </>
   );
 };
 

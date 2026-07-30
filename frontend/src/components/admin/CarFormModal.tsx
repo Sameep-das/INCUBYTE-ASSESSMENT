@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { carFormSchema, CarFormData } from '../../types/auth';
-import { Car } from '../../types/car';
+import { CAR_CATEGORIES, Car } from '../../types/car';
 
 interface CarFormModalProps {
   car: Car | null;
@@ -113,12 +113,9 @@ export const CarFormModal: React.FC<CarFormModalProps> = ({ car, isOpen, onClose
                 {...register('category')}
                 className="w-full px-3.5 py-2 text-sm rounded-xl border border-gray-300 focus:ring-2 focus:ring-rose-500 focus:outline-none bg-white"
               >
-                <option value="Sedan">Sedan</option>
-                <option value="SUV">SUV</option>
-                <option value="Hatchback">Hatchback</option>
-                <option value="Electric">Electric</option>
-                <option value="Sports">Sports</option>
-                <option value="Luxury">Luxury</option>
+                {CAR_CATEGORIES.map((category) => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
               </select>
             </div>
             <div>

@@ -4,6 +4,7 @@ import { AdminCarCard } from '../components/admin/AdminCarCard';
 import { PerformanceChart } from '../components/admin/PerformanceChart';
 import { CarFormModal } from '../components/admin/CarFormModal';
 import { deleteCarApi, saveCarApi } from '../services/api';
+import { showErrorToast } from '../services/errorToast';
 
 interface AdminDashboardProps {
   cars: Car[];
@@ -17,14 +18,22 @@ export const AdminDashboardPage: React.FC<AdminDashboardProps> = ({ cars, onRefr
 
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this vehicle entry?')) {
-      await deleteCarApi(id);
-      onRefresh();
+      try {
+        await deleteCarApi(id);
+        onRefresh();
+      } catch (error) {
+        showErrorToast(error instanceof Error ? error.message : 'Failed to delete vehicle');
+      }
     }
   };
 
   const handleSaveCar = async (carData: Omit<Car, 'id'> & { id?: string }) => {
-    await saveCarApi(carData);
-    onRefresh();
+    try {
+      await saveCarApi(carData);
+      onRefresh();
+    } catch (error) {
+      showErrorToast(error instanceof Error ? error.message : 'Failed to save vehicle');
+    }
   };
 
   const handleOpenAddModal = () => {
