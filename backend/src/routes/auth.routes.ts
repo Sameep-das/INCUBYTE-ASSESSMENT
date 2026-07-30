@@ -11,9 +11,8 @@ const authRouter = Router();
 authRouter.post("/register", validateSchema(userSignUpSchema), signUpController);
 authRouter.post("/login", validateSchema(userLogInSchema), logInController);
 authRouter.post("/logout", authenticate, csrfProtection, logOutController);
-authRouter.post("/refresh", csrfProtection, refreshTokenController);
+authRouter.post("/refresh", csrfProtection, refreshTokenController); //refreshing the refresh token
 
-// Registers administrative endpoints under /auth/admin for authentication and crawler management.
-// authRouter.use("/admin", adminRouter);
+
 
 export default authRouter;

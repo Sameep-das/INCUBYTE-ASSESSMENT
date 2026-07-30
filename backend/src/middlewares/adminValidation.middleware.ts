@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from "express";
-import { z } from "zod";
+import type { Request, Response, NextFunction } from "express";
+import { z, ZodError } from "zod";
 
 const carCategoriesEnum = z.enum(["SUV", "HATCHBACK", "SEDAN", "CONVERTIBLE", "COUPE", "WAGON", "VAN", "JEEP", "MUV"]);
 
@@ -23,7 +23,8 @@ export const validateCreateCar = (req: Request, res: Response, next: NextFunctio
         req.body = createCarSchema.parse(req.body);
         next();
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.errors });
+        const message = error instanceof ZodError ? error.issues : error.message;
+        res.status(400).json({ success: false, message });
     }
 };
 
@@ -32,7 +33,8 @@ export const validateUpdateCar = (req: Request, res: Response, next: NextFunctio
         req.body = updateCarSchema.parse(req.body);
         next();
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.errors });
+        const message = error instanceof ZodError ? error.issues : error.message;
+        res.status(400).json({ success: false, message });
     }
 };
 
@@ -41,6 +43,7 @@ export const validateRestock = (req: Request, res: Response, next: NextFunction)
         req.body = restockSchema.parse(req.body);
         next();
     } catch (error: any) {
-        res.status(400).json({ success: false, message: error.errors });
+        const message = error instanceof ZodError ? error.issues : error.message;
+        res.status(400).json({ success: false, message });
     }
 };

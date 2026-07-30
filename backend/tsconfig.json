@@ -3,9 +3,8 @@
     "rootDir": "./src",
     "outDir": "./dist",
 
-    "baseUrl": "./src",
     "paths": {
-      "@/*": ["*"]
+      "@/*": ["./src/*"]
     },
 
     "module": "NodeNext",

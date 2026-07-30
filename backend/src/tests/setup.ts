@@ -1,0 +1,9 @@
+process.env.DATABASE_URL ??= "postgresql://user:password@localhost:5432/dealership";
+process.env.FRONTEND_URL ??= "http://localhost:5173";
+process.env.PORT ??= "2121";
+process.env.NODE_ENV ??= "test";
+process.env.JWT_SECRET_ACCESS_TOKEN ??= "test-access-secret-with-at-least-thirty-two-chars";
+process.env.JWT_SECRET_REFRESH_TOKEN ??= "test-refresh-secret-with-at-least-thirty-two-chars";
+process.env.ADMIN_EMAIL ??= "admin@dealership.com";
+process.env.ADMIN_NAME ??= "Admin";
+process.env.ADMIN_PASSWORD_HASH ??= "$2b$10$7FPl/yq9I680g87uURnlO.P6wvBr/8.Mj0VhjjIDMpHhrn1KB7q3u";

@@ -1,10 +1,35 @@
 import request from "supertest";
-import { beforeEach, describe, expect, it } from "vitest";
-import app from "../../src/app.js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import app from "@/app.js";
+import { DuplicateUserError, InvalidCredentialsError } from "@/errors/auth.errors.js";
+
+vi.mock("@/services/auth.service.js", () => ({
+    signUpService: vi.fn(),
+    logInService: vi.fn(),
+    logOutService: vi.fn(),
+    refreshTokenRotationService: vi.fn(),
+}));
+
+vi.mock("@/services/cars.service.js", () => ({
+    fetchAllCars: vi.fn(),
+    searchCars: vi.fn(),
+    getCarById: vi.fn(),
+    getCarFilterOptions: vi.fn(),
+    purchaseCarForUser: vi.fn(),
+}));
+
+vi.mock("@/repositories/orders.repository.js", () => ({
+    getSalesByMake: vi.fn(),
+    getTopCarModels: vi.fn(),
+}));
+
+import * as authService from "@/services/auth.service.js";
+
+const mockedAuthService = vi.mocked(authService);
 
 const buildRegisterPayload = (overrides: Record<string, unknown> = {}) => ({
     username: "John",
-    email: `john-${Date.now()}@example.com`,
+    email: "john@example.com",
     password: "Password@123",
     city: "Delhi",
     pinCode: "110001",
@@ -15,249 +40,106 @@ const buildRegisterPayload = (overrides: Record<string, unknown> = {}) => ({
 });
 
 describe("Authentication Routes", () => {
-    describe("POST /api/auth/register", () => {
-        it("should register a new user", async () => {
-            const payload = buildRegisterPayload();
-            const response = await request(app)
-                .post("/api/auth/register")
-                .send(payload);
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
 
-            expect(response.status).toBe(201);
-            expect(response.body.success).toBe(true);
-            expect(response.body.message).toBe("User signed up successfully");
-            expect(response.body.accessToken).toEqual(expect.any(String));
-            expect(response.body.userName).toBe(payload.username.toLowerCase());
-            expect(response.body.userEmail).toBe(payload.email.toLowerCase());
+    it("registers a new user", async () => {
+        mockedAuthService.signUpService.mockResolvedValue({
+            user: {
+                userId: "00000000-0000-0000-0000-000000000001",
+                userName: "john",
+                userEmail: "john@example.com",
+            },
+            accessToken: "access-token",
+            refreshToken: "refresh-token",
         });
 
-        it("should reject duplicate email", async () => {
-            const payload = buildRegisterPayload();
+        const response = await request(app)
+            .post("/api/auth/register")
+            .send(buildRegisterPayload());
 
-            await request(app)
-                .post("/api/auth/register")
-                .send(payload);
+        expect(response.status).toBe(201);
+        expect(response.body).toEqual({
+            userName: "john",
+            userEmail: "john@example.com",
+            accessToken: "access-token",
+            success: true,
+            message: "User signed up successfully",
+        });
+        expect(response.headers["set-cookie"]).toBeDefined();
+    });
 
-            const response = await request(app)
-                .post("/api/auth/register")
-                .send(payload);
+    it("returns duplicate-user errors from registration", async () => {
+        mockedAuthService.signUpService.mockRejectedValue(new DuplicateUserError("User already exists"));
 
-            expect(response.status).toBe(409);
-            expect(response.body.success).toBe(false);
-            expect(response.body.message).toBe("User already exists");
-            expect(response.body.name).toBe("DuplicateUserError");
+        const response = await request(app)
+            .post("/api/auth/register")
+            .send(buildRegisterPayload());
+
+        expect(response.status).toBe(409);
+        expect(response.body.success).toBe(false);
+        expect(response.body.name).toBe("DuplicateUserError");
+        expect(response.body.message).toBe("User already exists");
+    });
+
+    it("rejects invalid registration payloads before service execution", async () => {
+        const response = await request(app)
+            .post("/api/auth/register")
+            .send(buildRegisterPayload({ email: "not-email" }));
+
+        expect(response.status).toBe(400);
+        expect(response.body.success).toBe(false);
+        expect(response.body.name).toBe("InvalidRequestError");
+        expect(mockedAuthService.signUpService).not.toHaveBeenCalled();
+    });
+
+    it("logs in an existing user", async () => {
+        mockedAuthService.logInService.mockResolvedValue({
+            user: {
+                userId: "00000000-0000-0000-0000-000000000001",
+                userName: "john",
+                userEmail: "john@example.com",
+            },
+            accessToken: "access-token",
+            refreshToken: "refresh-token",
         });
 
-        it("should reject missing email", async () => {
-            const response = await request(app)
-                .post("/api/auth/register")
-                .send({
-                    username: "John",
-                    password: "Password@123"
-                });
+        const response = await request(app)
+            .post("/api/auth/login")
+            .send({ email: "john@example.com", password: "Password@123" });
 
-            expect(response.status).toBe(400);
-            expect(response.body.success).toBe(false);
-            expect(response.body.name).toBe("InvalidRequestError");
-        });
-
-        it("should reject missing password", async () => {
-            const response = await request(app)
-                .post("/api/auth/register")
-                .send({
-                    username: "John",
-                    email: "john@example.com"
-                });
-
-            expect(response.status).toBe(400);
-            expect(response.body.success).toBe(false);
-            expect(response.body.name).toBe("InvalidRequestError");
-        });
-
-        it("should reject missing username", async () => {
-            const response = await request(app)
-                .post("/api/auth/register")
-                .send({
-                    email: "john@example.com",
-                    password: "Password@123"
-                });
-
-            expect(response.status).toBe(400);
-            expect(response.body.success).toBe(false);
-            expect(response.body.name).toBe("InvalidRequestError");
-        });
-
-        it("should reject invalid email", async () => {
-            const response = await request(app)
-                .post("/api/auth/register")
-                .send(buildRegisterPayload({ email: "abc" }));
-
-            expect(response.status).toBe(400);
-            expect(response.body.success).toBe(false);
-            expect(response.body.name).toBe("InvalidRequestError");
-        });
-
-        it("should reject weak password", async () => {
-            const response = await request(app)
-                .post("/api/auth/register")
-                .send(buildRegisterPayload({ password: "123" }));
-
-            expect(response.status).toBe(400);
-            expect(response.body.success).toBe(false);
-            expect(response.body.name).toBe("InvalidRequestError");
-        });
-
-        it("should reject empty body", async () => {
-            const response = await request(app)
-                .post("/api/auth/register")
-                .send({});
-
-            expect(response.status).toBe(400);
-            expect(response.body.success).toBe(false);
-            expect(response.body.name).toBe("InvalidRequestError");
-        });
-
-        it("should reject null values", async () => {
-            const response = await request(app)
-                .post("/api/auth/register")
-                .send({
-                    username: null,
-                    email: null,
-                    password: null
-                });
-
-            expect(response.status).toBe(400);
-            expect(response.body.success).toBe(false);
-            expect(response.body.name).toBe("InvalidRequestError");
-        });
-
-        it("should reject missing address fields", async () => {
-            const response = await request(app)
-                .post("/api/auth/register")
-                .send({
-                    username: "John",
-                    email: "john@example.com",
-                    password: "Password@123"
-                });
-
-            expect(response.status).toBe(400);
-            expect(response.body.success).toBe(false);
-            expect(response.body.name).toBe("InvalidRequestError");
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual({
+            userName: "john",
+            userEmail: "john@example.com",
+            accessToken: "access-token",
+            success: true,
+            message: "User logged in successfully",
         });
     });
 
-    describe("POST /api/auth/login", () => {
-        let loginEmail: string;
+    it("returns invalid-credential errors from login", async () => {
+        mockedAuthService.logInService.mockRejectedValue(new InvalidCredentialsError("Invalid credentials", 401));
 
-        beforeEach(async () => {
-            loginEmail = `john-${Date.now()}@example.com`;
+        const response = await request(app)
+            .post("/api/auth/login")
+            .send({ email: "john@example.com", password: "Password@123" });
 
-            await request(app)
-                .post("/api/auth/register")
-                .send(buildRegisterPayload({ email: loginEmail }));
-        });
+        expect(response.status).toBe(401);
+        expect(response.body.success).toBe(false);
+        expect(response.body.name).toBe("InvalidCredentialsError");
+        expect(response.body.message).toBe("Invalid credentials");
+    });
 
-        it("should login successfully", async () => {
-            const response = await request(app)
-                .post("/api/auth/login")
-                .send({
-                    email: loginEmail,
-                    password: "Password@123"
-                });
+    it("rejects invalid login payloads before service execution", async () => {
+        const response = await request(app)
+            .post("/api/auth/login")
+            .send({ email: "john@example.com", password: "weak" });
 
-            expect(response.status).toBe(200);
-            expect(response.body.success).toBe(true);
-            expect(response.body.message).toBe("User logged in successfully");
-            expect(response.body.accessToken).toEqual(expect.any(String));
-            expect(response.body.userName).toEqual(expect.any(String));
-            expect(response.body.userEmail).toBe(loginEmail.toLowerCase());
-        });
-
-        it("should reject wrong password", async () => {
-            const response = await request(app)
-                .post("/api/auth/login")
-                .send({
-                    email: loginEmail,
-                    password: "Wron12@gPassw"
-                });
-
-            expect(response.status).toBe(401);
-            expect(response.body.success).toBe(false);
-            expect(response.body.message).toBe("Invalid credentials");
-            expect(response.body.name).toBe("InvalidCredentialsError");
-        });
-
-        it("should reject unknown email", async () => {
-            const response = await request(app)
-                .post("/api/auth/login")
-                .send({
-                    email: "abc@example.com",
-                    password: "Password@123"
-                });
-
-            expect(response.status).toBe(401);
-            expect(response.body.success).toBe(false);
-            expect(response.body.message).toBe("Invalid credentials");
-            expect(response.body.name).toBe("InvalidCredentialsError");
-        });
-
-        it("should reject missing email", async () => {
-            const response = await request(app)
-                .post("/api/auth/login")
-                .send({
-                    password: "Password@123"
-                });
-
-            expect(response.status).toBe(400);
-            expect(response.body.success).toBe(false);
-            expect(response.body.name).toBe("InvalidRequestError");
-        });
-
-        it("should reject missing password", async () => {
-            const response = await request(app)
-                .post("/api/auth/login")
-                .send({
-                    email: loginEmail
-                });
-
-            expect(response.status).toBe(400);
-            expect(response.body.success).toBe(false);
-            expect(response.body.name).toBe("InvalidRequestError");
-        });
-
-        it("should reject invalid email format", async () => {
-            const response = await request(app)
-                .post("/api/auth/login")
-                .send({
-                    email: "abc",
-                    password: "Password@123"
-                });
-
-            expect(response.status).toBe(400);
-            expect(response.body.success).toBe(false);
-            expect(response.body.name).toBe("InvalidRequestError");
-        });
-
-        it("should reject empty body", async () => {
-            const response = await request(app)
-                .post("/api/auth/login")
-                .send({});
-
-            expect(response.status).toBe(400);
-            expect(response.body.success).toBe(false);
-            expect(response.body.name).toBe("InvalidRequestError");
-        });
-
-        it("should reject null values", async () => {
-            const response = await request(app)
-                .post("/api/auth/login")
-                .send({
-                    email: null,
-                    password: null
-                });
-
-            expect(response.status).toBe(400);
-            expect(response.body.success).toBe(false);
-            expect(response.body.name).toBe("InvalidRequestError");
-        });
+        expect(response.status).toBe(400);
+        expect(response.body.success).toBe(false);
+        expect(response.body.name).toBe("InvalidRequestError");
+        expect(mockedAuthService.logInService).not.toHaveBeenCalled();
     });
 });

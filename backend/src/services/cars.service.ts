@@ -5,13 +5,13 @@ import type { NewCar, Car, CarCategory, SearchCarsDTO } from "@/types/cars.type.
 import { CarAlreadyExistsError, CarNotFoundError } from "@/errors/cars.error.js";
 import * as reservationStore from "@/utils/reservation.store.js";
 import { isCarFrozen, freezeCar } from "@/utils/maintenance.store.js";
+import { findById, getUserId } from "@/repositories/user.repository.js";
+import * as orderRepo from "@/repositories/orders.repository.js";
+import { carCategories } from "@/db/schema/cars.js";
 
 export const fetchAllCars = async () => {
     const cars = await carRepo.findAllCars();
-    if (!cars || cars.length === 0) {
-        throw new Error("No cars found");
-    }
-    return cars;
+    return cars ?? [];
 }
 
 export const searchCars = async (filters: SearchCarsDTO) => {
@@ -30,6 +30,9 @@ export const searchCars = async (filters: SearchCarsDTO) => {
 
     if (maxPrice !== undefined && maxPrice < 0) {
         throw new InvalidRequestError("Maximum price cannot be negative");
+    }
+    if (filters.category && !carCategories.enumValues.includes(filters.category)) {
+        throw new InvalidRequestError("Invalid car category");
     }
     const result = await carRepo.findCarsByFilters(filters);
     if(!result || result.length === 0) {
@@ -106,7 +109,14 @@ export const getCarsByPriceRange = async (minPrice: number, maxPrice: number) =>
     return cars;
 }
 
-export async function purchaseCar(carId: string) {
+export async function purchaseCar(userId: string, carId: string) {
+    if (!userId) {
+        throw new InvalidRequestError("User ID is required for purchase");
+    }
+    const user = await findById(userId);
+    if (!user) {
+        throw new InvalidRequestError("User not found");
+    }
     if (isCarFrozen(carId)) {
         throw new ApplicationError("Car under inventorry maintainance");
     }
@@ -125,10 +135,35 @@ export async function purchaseCar(carId: string) {
     reservationStore.reserve(carId);
 
     try {
-        return await carRepo.purchase(carId);
+        const purchaseResult = await carRepo.purchase(carId);
+        if(!purchaseResult) {
+            throw new ApplicationError("Failed to update car quantity");
+        }
+        const orderDetails = await orderRepo.placeOrder(userId, carId, car.price.toString());
+        if(!orderDetails) {
+            throw new ApplicationError("Failed to place order");
+        }
+        return orderDetails;
     } finally {
         reservationStore.release(carId);
     }
+}
+
+export async function purchaseCarForUser(userEmail: string, carId: string) {
+    const userId = await getUserId(userEmail);
+    if (!userId) {
+        throw new InvalidRequestError("User not found");
+    }
+
+    return purchaseCar(userId, carId);
+}
+
+export const getCarFilterOptions = async () => {
+    const makes = await carRepo.findDistinctMakes();
+    return {
+        categories: [...carCategories.enumValues],
+        makes
+    };
 }
 
 export const deleteCarRecord = async (carId: string) => {

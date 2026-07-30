@@ -8,6 +8,8 @@
     "clean": "rimraf dist",
     "build": "npm run clean && tsc",
     "start": "node dist/server.js",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate"
   },

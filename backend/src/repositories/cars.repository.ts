@@ -1,7 +1,7 @@
 import db from "@/config/db.config.js";
 import { cars, carCategories } from "@/db/schema/cars.js";
 import ApplicationError from "@/errors/application.error.js";
-import { eq, gte, lte, sql, and, ilike } from "drizzle-orm";
+import { eq, gte, lte, sql, and, ilike, asc } from "drizzle-orm";
 import type { NewCar, Car, CarCategory, SearchCarsDTO } from "@/types/cars.type.js";
 
 export async function createCar(newCar: NewCar) {
@@ -98,6 +98,10 @@ export async function findCarsByFilters(filters: SearchCarsDTO) {
     conditions.push(ilike(cars.carMake, `%${filters.make}%`));
   }
 
+  if (filters.model) {
+    conditions.push(ilike(cars.carModel, `%${filters.model}%`));
+  }
+
   if (filters.category) {
     conditions.push(eq(cars.category, filters.category));
   }
@@ -113,7 +117,7 @@ export async function findCarsByFilters(filters: SearchCarsDTO) {
   return db
     .select()
     .from(cars)
-    .where(and(...conditions));
+    .where(conditions.length > 0 ? and(...conditions) : undefined);
 }
 
 export async function purchase(carId: string) {
@@ -135,4 +139,15 @@ export async function purchase(carId: string) {
 
         return updatedCar;
     });
+}
+
+export async function findDistinctMakes() {
+    const makes = await db
+        .selectDistinct({
+            make: cars.carMake
+        })
+        .from(cars)
+        .orderBy(asc(cars.carMake));
+
+    return makes.map(({ make }) => make);
 }
