@@ -6,16 +6,22 @@ import { Navbar } from '../components/common/Navbar';
 
 interface CarsPageProps {
   cars: Car[];
+  categories: CarCategory[];
+  manufacturers: string[];
   isBookmarked: (id: string) => boolean;
   onToggleBookmark: (car: Car) => void;
+  onPurchase: (car: Car) => void;
   bookmarkCount: number;
   onNavigate: (tab: string) => void;
 }
 
 export const CarsPage: React.FC<CarsPageProps> = ({
   cars,
+  categories,
+  manufacturers,
   isBookmarked,
   onToggleBookmark,
+  onPurchase,
   bookmarkCount,
   onNavigate,
 }) => {
@@ -27,9 +33,6 @@ export const CarsPage: React.FC<CarsPageProps> = ({
     inStockOnly: false,
     sortBy: 'popularity',
   });
-
-  const categories = useMemo(() => Array.from(new Set(cars.map((c) => c.category))) as CarCategory[], [cars]);
-  const manufacturers = useMemo(() => Array.from(new Set(cars.map((c) => c.manufacturer))), [cars]);
 
   const filteredCars = useMemo(() => {
     return cars
@@ -84,7 +87,7 @@ export const CarsPage: React.FC<CarsPageProps> = ({
                 car={car}
                 isBookmarked={isBookmarked(car.id)}
                 onToggleBookmark={onToggleBookmark}
-                onPurchase={(purchasedCar) => alert(`Purchased ${purchasedCar.manufacturer} ${purchasedCar.model} successfully!`)}
+                onPurchase={onPurchase}
               />
             ))}
           </div>

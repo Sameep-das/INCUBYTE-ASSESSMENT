@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Car } from './types/car';
-import { fetchAdminDashboardStats, fetchCars } from './services/api';
+import { Car, CarCategory } from './types/car';
+import { fetchAdminCars, fetchAdminDashboardStats, fetchCarFilterOptions, fetchCars, logoutAdmin, purchaseCarApi } from './services/api';
 import { useBookmarks } from './hooks/useBookmarks';
 import { HomePage } from './pages/HomePage';
 import { CarsPage } from './pages/CarsPage';
@@ -12,13 +12,18 @@ import { showErrorToast } from './services/errorToast';
 
 export const App: React.FC = () => {
   const [cars, setCars] = useState<Car[]>([]);
+  const [filterOptions, setFilterOptions] = useState<{ categories: CarCategory[]; manufacturers: string[] }>({
+    categories: [],
+    manufacturers: [],
+  });
   const [currentPath, setCurrentPath] = useState<string>(window.location.pathname);
   const { bookmarkedCars, toggleBookmark, isBookmarked } = useBookmarks();
 
   const loadCarsData = async () => {
     try {
-      const data = await fetchCars();
+      const [data, options] = await Promise.all([fetchCars(), fetchCarFilterOptions()]);
       setCars(data);
+      setFilterOptions(options);
     } catch (error) {
       showErrorToast(error instanceof Error ? error.message : 'Failed to load cars');
       setCars([]);
@@ -27,11 +32,22 @@ export const App: React.FC = () => {
 
   const refreshAdminDashboard = async () => {
     try {
-      const [data] = await Promise.all([fetchCars(), fetchAdminDashboardStats()]);
+      const stats = await fetchAdminDashboardStats();
+      const data = await fetchAdminCars(stats);
       setCars(data);
     } catch (error) {
       showErrorToast(error instanceof Error ? error.message : 'Failed to load admin dashboard');
       setCars([]);
+    }
+  };
+
+  const handlePurchase = async (car: Car) => {
+    try {
+      await purchaseCarApi(car.id);
+      alert(`Purchased ${car.manufacturer} ${car.model} successfully!`);
+      await loadCarsData();
+    } catch (error) {
+      showErrorToast(error instanceof Error ? error.message : 'Failed to purchase vehicle');
     }
   };
 
@@ -76,7 +92,10 @@ export const App: React.FC = () => {
         <AdminDashboardPage
           cars={cars}
           onRefresh={refreshAdminDashboard}
-          onLogout={() => navigateTo('/')}
+          onLogout={() => {
+            logoutAdmin();
+            navigateTo('/');
+          }}
         />
       </>
     );
@@ -88,8 +107,11 @@ export const App: React.FC = () => {
         <ErrorToastHost />
         <CarsPage
           cars={cars}
+          categories={filterOptions.categories}
+          manufacturers={filterOptions.manufacturers}
           isBookmarked={isBookmarked}
           onToggleBookmark={toggleBookmark}
+          onPurchase={handlePurchase}
           bookmarkCount={bookmarkedCars.length}
           onNavigate={(tab) => navigateTo(tab === 'home' ? '/' : tab.startsWith('/') ? tab : `/${tab}`)}
         />
@@ -105,6 +127,7 @@ export const App: React.FC = () => {
           bookmarkedCars={bookmarkedCars}
           isBookmarked={isBookmarked}
           onToggleBookmark={toggleBookmark}
+          onPurchase={handlePurchase}
           onNavigate={(tab) => navigateTo(tab === 'home' ? '/' : tab.startsWith('/') ? tab : `/${tab}`)}
         />
       </>

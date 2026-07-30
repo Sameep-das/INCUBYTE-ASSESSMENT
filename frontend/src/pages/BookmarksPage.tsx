@@ -7,6 +7,7 @@ interface BookmarksPageProps {
   bookmarkedCars: Car[];
   isBookmarked: (id: string) => boolean;
   onToggleBookmark: (car: Car) => void;
+  onPurchase: (car: Car) => void;
   onNavigate: (tab: string) => void;
 }
 
@@ -14,6 +15,7 @@ export const BookmarksPage: React.FC<BookmarksPageProps> = ({
   bookmarkedCars,
   isBookmarked,
   onToggleBookmark,
+  onPurchase,
   onNavigate,
 }) => {
   return (
@@ -54,7 +56,7 @@ export const BookmarksPage: React.FC<BookmarksPageProps> = ({
                 car={car}
                 isBookmarked={isBookmarked(car.id)}
                 onToggleBookmark={onToggleBookmark}
-                onPurchase={(purchasedCar) => alert(`Purchased ${purchasedCar.manufacturer} ${purchasedCar.model} successfully!`)}
+                onPurchase={onPurchase}
               />
             ))}
           </div>
