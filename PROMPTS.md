@@ -29,3 +29,6 @@ Use a maintainable folder structure along with descriptive file names.
 Move to the frontend folder and refactor it to fetch data from the backend apis as exposed for each route.
 DO not change any code in backend folder
 Do not change the UI of the web app at all, only refactor it.
+
+# PROMPT 6 -
+Review the all the backend URL endpoints with their flow. Report if any flow is broken or flawed by design. The review should be speculative of any chances of tampering with any of the endpoints. Your response must be sorted from highly critical ones to lesser critical areas, along with what is mainly wrong with it. DO NOT PROVIDE IMPLEMENTATIONS.

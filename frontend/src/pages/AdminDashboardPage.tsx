@@ -3,16 +3,18 @@ import { Car } from '../types/car';
 import { AdminCarCard } from '../components/admin/AdminCarCard';
 import { PerformanceChart } from '../components/admin/PerformanceChart';
 import { CarFormModal } from '../components/admin/CarFormModal';
-import { deleteCarApi, saveCarApi } from '../services/api';
+import { DashboardStats, deleteCarApi, saveCarApi } from '../services/api';
 import { showErrorToast } from '../services/errorToast';
+import { CarFormData } from '../types/auth';
 
 interface AdminDashboardProps {
   cars: Car[];
-  onRefresh: () => void;
-  onLogout: () => void;
+  stats: DashboardStats;
+  onRefresh: () => Promise<void> | void;
+  onLogout: () => Promise<void> | void;
 }
 
-export const AdminDashboardPage: React.FC<AdminDashboardProps> = ({ cars, onRefresh, onLogout }) => {
+export const AdminDashboardPage: React.FC<AdminDashboardProps> = ({ cars, stats, onRefresh, onLogout }) => {
   const [editingCar, setEditingCar] = useState<Car | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
@@ -20,19 +22,20 @@ export const AdminDashboardPage: React.FC<AdminDashboardProps> = ({ cars, onRefr
     if (confirm('Are you sure you want to delete this vehicle entry?')) {
       try {
         await deleteCarApi(id);
-        onRefresh();
+        await onRefresh();
       } catch (error) {
         showErrorToast(error instanceof Error ? error.message : 'Failed to delete vehicle');
       }
     }
   };
 
-  const handleSaveCar = async (carData: Omit<Car, 'id'> & { id?: string }) => {
+  const handleSaveCar = async (carData: CarFormData & { id?: string }) => {
     try {
       await saveCarApi(carData);
-      onRefresh();
+      await onRefresh();
     } catch (error) {
       showErrorToast(error instanceof Error ? error.message : 'Failed to save vehicle');
+      throw error;
     }
   };
 
@@ -72,7 +75,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardProps> = ({ cars, onRefr
 
       <main className="max-w-7xl mx-auto px-4 py-8 w-full flex-1">
         {/* Market Analytics Chart */}
-        <PerformanceChart cars={cars} />
+        <PerformanceChart cars={cars} stats={stats} />
 
         {/* Inventory Cards Management */}
         <div className="flex justify-between items-center mb-6">

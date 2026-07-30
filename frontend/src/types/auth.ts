@@ -12,6 +12,14 @@ export const INDIAN_STATES = [
 export const signupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address'),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(20, 'Password must be less than 20 characters')
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+      'Use uppercase, lowercase, number, and special character',
+    ),
   phone: z
     .string()
     .optional()
@@ -24,6 +32,13 @@ export const signupSchema = z.object({
 });
 
 export type SignupFormData = z.infer<typeof signupSchema>;
+
+export const userLoginSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(20, 'Password must be less than 20 characters'),
+});
+
+export type UserLoginData = z.infer<typeof userLoginSchema>;
 
 export const adminLoginSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -40,8 +55,6 @@ export const carFormSchema = z.object({
   quantity: z.number().min(0, 'Quantity must be at least 0'),
   price: z.number().min(100, 'Price must be realistic'),
   year: z.number().min(1900).max(new Date().getFullYear() + 1),
-  marketShare: z.number().min(0).max(100),
-  monthlySales: z.number().min(0),
 });
 
 export type CarFormData = z.infer<typeof carFormSchema>;

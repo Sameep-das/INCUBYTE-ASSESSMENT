@@ -3,6 +3,7 @@ import { Car, FilterState, CarCategory } from '../types/car';
 import { CarCard } from '../components/cars/CarCard';
 import { ZomatoFilterBar } from '../components/cars/ZomatoFilterBar';
 import { Navbar } from '../components/common/Navbar';
+import { UserSession } from '../services/api';
 
 interface CarsPageProps {
   cars: Car[];
@@ -13,6 +14,8 @@ interface CarsPageProps {
   onPurchase: (car: Car) => void;
   bookmarkCount: number;
   onNavigate: (tab: string) => void;
+  user: UserSession | null;
+  onLogout: () => void;
 }
 
 export const CarsPage: React.FC<CarsPageProps> = ({
@@ -24,6 +27,8 @@ export const CarsPage: React.FC<CarsPageProps> = ({
   onPurchase,
   bookmarkCount,
   onNavigate,
+  user,
+  onLogout,
 }) => {
   const [filters, setFilters] = useState<FilterState>({
     search: '',
@@ -54,7 +59,7 @@ export const CarsPage: React.FC<CarsPageProps> = ({
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      <Navbar activeTab="cars" onNavigate={onNavigate} bookmarkCount={bookmarkCount} />
+      <Navbar activeTab="cars" onNavigate={onNavigate} bookmarkCount={bookmarkCount} user={user} onLogout={onLogout} />
       <ZomatoFilterBar
         filters={filters}
         onChange={setFilters}

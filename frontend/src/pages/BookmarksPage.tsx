@@ -2,6 +2,7 @@ import React from 'react';
 import { Car } from '../types/car';
 import { CarCard } from '../components/cars/CarCard';
 import { Navbar } from '../components/common/Navbar';
+import { UserSession } from '../services/api';
 
 interface BookmarksPageProps {
   bookmarkedCars: Car[];
@@ -9,6 +10,8 @@ interface BookmarksPageProps {
   onToggleBookmark: (car: Car) => void;
   onPurchase: (car: Car) => void;
   onNavigate: (tab: string) => void;
+  user: UserSession | null;
+  onLogout: () => void;
 }
 
 export const BookmarksPage: React.FC<BookmarksPageProps> = ({
@@ -17,10 +20,12 @@ export const BookmarksPage: React.FC<BookmarksPageProps> = ({
   onToggleBookmark,
   onPurchase,
   onNavigate,
+  user,
+  onLogout,
 }) => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      <Navbar activeTab="bookmarks" onNavigate={onNavigate} bookmarkCount={bookmarkedCars.length} />
+      <Navbar activeTab="bookmarks" onNavigate={onNavigate} bookmarkCount={bookmarkedCars.length} user={user} onLogout={onLogout} />
 
       <main className="max-w-7xl mx-auto px-4 py-8 flex-1 w-full">
         <div className="flex justify-between items-center mb-6">

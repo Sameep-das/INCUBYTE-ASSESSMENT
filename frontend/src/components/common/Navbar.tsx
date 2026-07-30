@@ -1,12 +1,30 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { UserSession } from '../../services/api';
 
 interface NavbarProps {
   activeTab: string;
   onNavigate: (tab: string) => void;
   bookmarkCount: number;
+  user: UserSession | null;
+  onLogout: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ activeTab, onNavigate, bookmarkCount }) => {
+const getInitials = (user: UserSession | null) => {
+  if (!user) return 'U';
+
+  const source = user.name || user.email;
+  const parts = source.trim().split(/\s+/).filter(Boolean);
+
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  }
+
+  return source.slice(0, 2).toUpperCase();
+};
+
+export const Navbar: React.FC<NavbarProps> = ({ activeTab, onNavigate, bookmarkCount, user, onLogout }) => {
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-40 bg-slate-900 text-white border-b border-slate-800 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -42,9 +60,47 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, onNavigate, bookmarkC
             )}
           </button>
 
-          {/* Account Profile Icon */}
-          <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-slate-300 cursor-pointer hover:border-rose-500 transition-all">
-            JD
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsProfileOpen((value) => !value)}
+              className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-slate-300 cursor-pointer hover:border-rose-500 transition-all"
+              title="Account"
+            >
+              {getInitials(user)}
+            </button>
+
+            {isProfileOpen && (
+              <div className="absolute right-0 top-11 w-56 bg-white text-slate-900 rounded-xl border border-gray-200 shadow-xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <p className="text-xs font-bold text-slate-900 truncate">{user?.name || 'Guest User'}</p>
+                  <p className="text-[11px] text-gray-500 truncate">{user?.email || 'Sign in from the home page'}</p>
+                </div>
+                {user ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsProfileOpen(false);
+                      onLogout();
+                    }}
+                    className="w-full text-left px-4 py-3 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                  >
+                    Logout
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsProfileOpen(false);
+                      onNavigate('home');
+                    }}
+                    className="w-full text-left px-4 py-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    Sign in
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </nav>
       </div>

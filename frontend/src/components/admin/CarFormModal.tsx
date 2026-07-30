@@ -8,7 +8,7 @@ interface CarFormModalProps {
   car: Car | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (carData: Omit<Car, 'id'> & { id?: string }) => Promise<void>;
+  onSave: (carData: CarFormData & { id?: string }) => Promise<void>;
 }
 
 export const CarFormModal: React.FC<CarFormModalProps> = ({ car, isOpen, onClose, onSave }) => {
@@ -26,8 +26,6 @@ export const CarFormModal: React.FC<CarFormModalProps> = ({ car, isOpen, onClose
       quantity: 5,
       price: 1200000,
       year: new Date().getFullYear(),
-      marketShare: 10,
-      monthlySales: 100,
     },
   });
 
@@ -40,8 +38,6 @@ export const CarFormModal: React.FC<CarFormModalProps> = ({ car, isOpen, onClose
         quantity: car.quantity,
         price: car.price,
         year: car.year,
-        marketShare: car.marketShare || 10,
-        monthlySales: car.monthlySales || 100,
       });
     } else {
       reset({
@@ -51,8 +47,6 @@ export const CarFormModal: React.FC<CarFormModalProps> = ({ car, isOpen, onClose
         quantity: 5,
         price: 1200000,
         year: new Date().getFullYear(),
-        marketShare: 10,
-        monthlySales: 100,
       });
     }
   }, [car, reset, isOpen]);
@@ -147,26 +141,6 @@ export const CarFormModal: React.FC<CarFormModalProps> = ({ car, isOpen, onClose
                 className="w-full px-3.5 py-2 text-sm rounded-xl border border-gray-300 focus:ring-2 focus:ring-rose-500 focus:outline-none"
               />
               {errors.quantity && <p className="text-xs text-rose-500 mt-1">{errors.quantity.message}</p>}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Market Share (%)</label>
-              <input
-                type="number"
-                step="0.1"
-                {...register('marketShare', { valueAsNumber: true })}
-                className="w-full px-3.5 py-2 text-sm rounded-xl border border-gray-300 focus:ring-2 focus:ring-rose-500 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Monthly Sales</label>
-              <input
-                type="number"
-                {...register('monthlySales', { valueAsNumber: true })}
-                className="w-full px-3.5 py-2 text-sm rounded-xl border border-gray-300 focus:ring-2 focus:ring-rose-500 focus:outline-none"
-              />
             </div>
           </div>
 

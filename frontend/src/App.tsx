@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Car, CarCategory } from './types/car';
-import { fetchAdminCars, fetchAdminDashboardStats, fetchCarFilterOptions, fetchCars, logoutAdmin, purchaseCarApi } from './services/api';
+import {
+  DashboardStats,
+  fetchAdminCars,
+  fetchAdminDashboardStats,
+  fetchCarFilterOptions,
+  fetchCars,
+  getStoredUser,
+  logoutAdmin,
+  logoutUser,
+  purchaseCarApi,
+  UserSession,
+} from './services/api';
 import { useBookmarks } from './hooks/useBookmarks';
 import { HomePage } from './pages/HomePage';
 import { CarsPage } from './pages/CarsPage';
@@ -16,6 +27,8 @@ export const App: React.FC = () => {
     categories: [],
     manufacturers: [],
   });
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats>({ salesByMake: [], topModels: [] });
+  const [currentUser, setCurrentUser] = useState<UserSession | null>(() => getStoredUser());
   const [currentPath, setCurrentPath] = useState<string>(window.location.pathname);
   const { bookmarkedCars, toggleBookmark, isBookmarked } = useBookmarks();
 
@@ -34,9 +47,11 @@ export const App: React.FC = () => {
     try {
       const stats = await fetchAdminDashboardStats();
       const data = await fetchAdminCars(stats);
+      setDashboardStats(stats);
       setCars(data);
     } catch (error) {
       showErrorToast(error instanceof Error ? error.message : 'Failed to load admin dashboard');
+      setDashboardStats({ salesByMake: [], topModels: [] });
       setCars([]);
     }
   };
@@ -46,8 +61,33 @@ export const App: React.FC = () => {
       await purchaseCarApi(car.id);
       alert(`Purchased ${car.manufacturer} ${car.model} successfully!`);
       await loadCarsData();
+      if (currentPath === '/admin/dashboard') {
+        await refreshAdminDashboard();
+      }
     } catch (error) {
       showErrorToast(error instanceof Error ? error.message : 'Failed to purchase vehicle');
+    }
+  };
+
+  const handleUserLogout = async () => {
+    try {
+      await logoutUser();
+    } catch (error) {
+      showErrorToast(error instanceof Error ? error.message : 'Failed to logout');
+    } finally {
+      setCurrentUser(null);
+      navigateTo('/');
+    }
+  };
+
+  const handleAdminLogout = async () => {
+    try {
+      await logoutAdmin();
+    } catch (error) {
+      showErrorToast(error instanceof Error ? error.message : 'Failed to logout admin');
+    } finally {
+      setDashboardStats({ salesByMake: [], topModels: [] });
+      navigateTo('/');
     }
   };
 
@@ -60,6 +100,17 @@ export const App: React.FC = () => {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  useEffect(() => {
+    if (currentPath === '/admin/dashboard') {
+      refreshAdminDashboard();
+      return;
+    }
+
+    if (currentPath === '/cars' || currentPath === '/bookmarks' || currentPath === '/') {
+      loadCarsData();
+    }
+  }, [currentPath]);
 
   const navigateTo = (path: string) => {
     window.history.pushState({}, '', path);
@@ -91,11 +142,9 @@ export const App: React.FC = () => {
         <ErrorToastHost />
         <AdminDashboardPage
           cars={cars}
+          stats={dashboardStats}
           onRefresh={refreshAdminDashboard}
-          onLogout={() => {
-            logoutAdmin();
-            navigateTo('/');
-          }}
+          onLogout={handleAdminLogout}
         />
       </>
     );
@@ -113,6 +162,8 @@ export const App: React.FC = () => {
           onToggleBookmark={toggleBookmark}
           onPurchase={handlePurchase}
           bookmarkCount={bookmarkedCars.length}
+          user={currentUser}
+          onLogout={handleUserLogout}
           onNavigate={(tab) => navigateTo(tab === 'home' ? '/' : tab.startsWith('/') ? tab : `/${tab}`)}
         />
       </>
@@ -128,6 +179,8 @@ export const App: React.FC = () => {
           isBookmarked={isBookmarked}
           onToggleBookmark={toggleBookmark}
           onPurchase={handlePurchase}
+          user={currentUser}
+          onLogout={handleUserLogout}
           onNavigate={(tab) => navigateTo(tab === 'home' ? '/' : tab.startsWith('/') ? tab : `/${tab}`)}
         />
       </>
@@ -139,6 +192,7 @@ export const App: React.FC = () => {
       <ErrorToastHost />
       <HomePage
         onViewCars={() => navigateTo('/cars')}
+        onAuthSuccess={(user) => setCurrentUser(user ?? getStoredUser())}
       />
     </>
   );

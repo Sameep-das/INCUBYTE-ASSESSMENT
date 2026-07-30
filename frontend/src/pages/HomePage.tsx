@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { AnimatedBackground } from '../components/home/AnimatedBackground';
 import { SignupModal } from '../components/home/SignupModal';
+import { UserSession } from '../services/api';
 
 interface HomePageProps {
   onViewCars: () => void;
+  onAuthSuccess: (user: UserSession | null) => void;
 }
 
-export const HomePage: React.FC<HomePageProps> = ({ onViewCars }) => {
+export const HomePage: React.FC<HomePageProps> = ({ onViewCars, onAuthSuccess }) => {
   const [isSignupOpen, setIsSignupOpen] = useState(false);
 
   return (
@@ -58,7 +60,8 @@ export const HomePage: React.FC<HomePageProps> = ({ onViewCars }) => {
       <SignupModal
         isOpen={isSignupOpen}
         onClose={() => setIsSignupOpen(false)}
-        onSuccess={() => {
+        onSuccess={(user) => {
+          onAuthSuccess(user);
           setIsSignupOpen(false);
           onViewCars();
         }}

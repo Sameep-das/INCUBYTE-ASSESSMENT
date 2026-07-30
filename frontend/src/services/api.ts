@@ -1,4 +1,4 @@
-import { AdminLoginData, SignupFormData } from '../types/auth';
+import { AdminLoginData, SignupFormData, UserLoginData } from '../types/auth';
 import { Car, CarCategory } from '../types/car';
 
 type BackendCarCategory =
@@ -43,6 +43,11 @@ export interface DashboardStats {
   }>;
 }
 
+export interface UserSession {
+  name: string;
+  email: string;
+}
+
 interface FilterOptionsResponse {
   categories: BackendCarCategory[];
   makes: string[];
@@ -50,7 +55,8 @@ interface FilterOptionsResponse {
 
 const ADMIN_TOKEN_KEY = 'admin_access_token';
 const USER_TOKEN_KEY = 'user_access_token';
-const DEFAULT_SIGNUP_PASSWORD = import.meta.env.VITE_DEFAULT_SIGNUP_PASSWORD || 'Password@123';
+const USER_NAME_KEY = 'user_name';
+const USER_EMAIL_KEY = 'user_email';
 
 const categoryToDisplay: Record<BackendCarCategory, CarCategory> = {
   SUV: 'SUV',
@@ -97,13 +103,15 @@ const normalizeMessage = (message: unknown) => {
 };
 
 const request = async <T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> => {
+  const { headers, ...restOptions } = options;
+
   const response = await fetch(path, {
     credentials: 'include',
+    ...restOptions,
     headers: {
       'Content-Type': 'application/json',
-      ...(options.headers || {}),
+      ...(headers || {}),
     },
-    ...options,
   });
   const body = await response.json().catch(() => ({}));
 
@@ -131,6 +139,34 @@ const adminHeaders = () => {
   return { Authorization: `Bearer ${token}` };
 };
 
+const storeUserSession = (response: ApiResponse<unknown>) => {
+  if (response.accessToken) {
+    localStorage.setItem(USER_TOKEN_KEY, response.accessToken);
+  }
+
+  if (response.userName) {
+    localStorage.setItem(USER_NAME_KEY, response.userName);
+  }
+
+  if (response.userEmail) {
+    localStorage.setItem(USER_EMAIL_KEY, response.userEmail);
+  }
+};
+
+export const getStoredUser = (): UserSession | null => {
+  const token = localStorage.getItem(USER_TOKEN_KEY);
+  const email = localStorage.getItem(USER_EMAIL_KEY);
+
+  if (!token || !email) {
+    return null;
+  }
+
+  return {
+    name: localStorage.getItem(USER_NAME_KEY) || email.split('@')[0],
+    email,
+  };
+};
+
 const mapCarFromBackend = (car: BackendCar, stats?: DashboardStats): Car => {
   const monthlySales = stats?.topModels.find((item) => item.model === car.carModel)?.ordersCount ?? 0;
   const makeSales = stats?.salesByMake.find((item) => item.make === car.carMake)?.ordersCount ?? 0;
@@ -149,11 +185,13 @@ const mapCarFromBackend = (car: BackendCar, stats?: DashboardStats): Car => {
   };
 };
 
-const mapCarToBackend = (car: Omit<Car, 'id'> & { id?: string }) => ({
+type CarSaveData = Omit<Car, 'id' | 'marketShare' | 'monthlySales'> & { id?: string };
+
+const mapCarToBackend = (car: CarSaveData) => ({
   carModel: car.model,
   carMake: car.manufacturer,
   quantity: car.quantity,
-  price: car.price,
+  price: car.price.toFixed(2),
   category: categoryToBackend[car.category],
   yearOfManufacturing: car.year,
 });
@@ -192,7 +230,7 @@ export const registerUser = async (data: SignupFormData) => {
     body: JSON.stringify({
       username: data.name,
       email: data.email,
-      password: DEFAULT_SIGNUP_PASSWORD,
+      password: data.password,
       city: data.city,
       pinCode: data.pincode,
       state: data.state,
@@ -200,11 +238,19 @@ export const registerUser = async (data: SignupFormData) => {
     }),
   });
 
-  if (response.accessToken) {
-    localStorage.setItem(USER_TOKEN_KEY, response.accessToken);
-  }
+  storeUserSession(response);
 
   return response;
+};
+
+export const loginUser = async (data: UserLoginData) => {
+  const response = await request<never>('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+
+  storeUserSession(response);
+  return getStoredUser();
 };
 
 export const adminLoginApi = async (data: AdminLoginData) => {
@@ -222,11 +268,43 @@ export const adminLoginApi = async (data: AdminLoginData) => {
   return false;
 };
 
-export const logoutAdmin = () => {
+export const logoutUser = async () => {
+  const token = localStorage.getItem(USER_TOKEN_KEY);
+
+  try {
+    if (token) {
+      await request<never>('/api/auth/logout', {
+        method: 'POST',
+        headers: authHeaders(token),
+      });
+    }
+  } finally {
+    localStorage.removeItem(USER_TOKEN_KEY);
+    localStorage.removeItem(USER_NAME_KEY);
+    localStorage.removeItem(USER_EMAIL_KEY);
+  }
+};
+
+export const logoutAdmin = async () => {
+  const token = localStorage.getItem(ADMIN_TOKEN_KEY);
+
+  try {
+    if (token) {
+      await request<never>('/api/admin/logout', {
+        method: 'POST',
+        headers: adminHeaders(),
+      });
+    }
+  } finally {
+    localStorage.removeItem(ADMIN_TOKEN_KEY);
+  }
+};
+
+export const clearAdminSession = () => {
   localStorage.removeItem(ADMIN_TOKEN_KEY);
 };
 
-export const saveCarApi = async (car: Omit<Car, 'id'> & { id?: string }) => {
+export const saveCarApi = async (car: CarSaveData) => {
   const payload = mapCarToBackend(car);
   const response = await request<BackendCar | { carId: string }>(
     car.id ? `/api/admin/cars/${car.id}` : '/api/admin/cars',
