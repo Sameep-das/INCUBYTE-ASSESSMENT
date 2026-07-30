@@ -77,7 +77,6 @@ Create a `.env` file inside `frontend`:
 
 ```env
 BACKEND_API_URL="http://localhost:2121"
-VITE_DEFAULT_SIGNUP_PASSWORD="Password@123"
 ```
 
 Run the frontend:
@@ -95,6 +94,14 @@ npm run build
 npm start
 ```
 
+## UNDERSTANDING THE PROJECT
+
+
+1. I have simulated a LOCK on purchase for concurrent requests on same car.
+2. I have also implemented a LOCK on a specfic car when the car is getting updated by the admin.
+
+![DESIGN](./project-design-architecture/System-Design_initial.svg)
+
 ## Project Test Report
 
 
@@ -107,6 +114,21 @@ npm start
 ![TEST-2](./project-design-architecture/Test2.png)
 
 ![TEST-3](./project-design-architecture/Test3.png)
+
+
+## DEMO -
+
+![HOME](./project-design-architecture/HOME-PAGE.png)
+
+![SIGNUP](./project-design-architecture/SIGN-UP-MODAL.png)
+
+![MAIN](./project-design-architecture/MAIN-PAGE.png)
+
+![ADMIN](./project-design-architecture/ADMIN%20DASHBOARD.png)
+
+![BOOKMARKS](./project-design-architecture/BOOKMARKS.png)
+
+![UPDATECAR](./project-design-architecture/ADD-VEHICEL-ADMIN.png)
 
 ## API Documentation
 

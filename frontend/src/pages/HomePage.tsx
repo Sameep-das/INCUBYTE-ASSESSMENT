@@ -26,7 +26,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onViewCars, onAuthSuccess })
       {/* Main Hero Section */}
       <main className={`relative z-10 max-w-4xl mx-auto px-6 text-center transition-all duration-300 ${isSignupOpen ? 'filter blur-md pointer-events-none' : ''}`}>
         <span className="inline-block bg-rose-500/10 text-rose-400 border border-rose-500/20 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest mb-6">
-          Next-Gen Precision Engineering
+          ALL TYPES OF CARS AVAILABLE
         </span>
         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400">
           Discover & Acquire Exceptional Vehicles.
@@ -53,7 +53,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onViewCars, onAuthSuccess })
 
       {/* Footer */}
       <footer className="relative z-10 text-center py-6 text-xs text-slate-600">
-        © {new Date().getFullYear()} CAR BYTE Automotive Network. All rights reserved.
+        © {new Date().getFullYear()} CAR BYTE @SAMEEP. All rights reserved.
       </footer>
 
       {/* Blurred Background Signup Modal */}
